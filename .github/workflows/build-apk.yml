@@ -1,0 +1,32 @@
+name: Build Duck Detector APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Android build toolchain
+        uses: ./.github/actions/setup-android-build
+        with:
+          cache-read-only: false
+
+      - name: Generate contributors asset
+        run: ./gradlew --stacktrace -Pduckdetector.githubContributors.refresh=true :app:generateGithubContributorsAsset
+
+      - name: Build debug APK
+        run: ./gradlew --stacktrace :app:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: duck-debug
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
